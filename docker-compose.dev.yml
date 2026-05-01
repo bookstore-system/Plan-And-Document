@@ -4,6 +4,7 @@ version: '3.8'
 # Nếu Dev A muốn dev 'user-service', họ chạy lệnh:
 # docker-compose -f docker-compose.dev.yml up -d --scale user-service=0
 
+
 services:
   user-db:
     image: mysql:8.0
