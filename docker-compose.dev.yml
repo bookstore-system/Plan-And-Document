@@ -138,6 +138,46 @@ services:
     networks:
       - bookstore-network
 
+  order-db:
+    image: mysql:8.0
+    container_name: order-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_order
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - order_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  payment-db:
+    image: mysql:8.0
+    container_name: payment-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_payment
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - payment_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   user-redis:
     image: redis:7.2-alpine
     container_name: user-redis
@@ -215,7 +255,6 @@ services:
     networks:
       - bookstore-network
 
-
   book-service:
     image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.0}
     container_name: book-service
@@ -245,7 +284,7 @@ services:
     ports:
       - "8083:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       REDIS_HOST: cart-redis
       REDIS_PORT: 6379
       BOOK_SERVICE_URL: http://book-service:8080
@@ -263,7 +302,12 @@ services:
     ports:
       - "8084:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://order-db:3306/bookstore_order?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       USER_SERVICE_URL: http://user-service:8080
       BOOK_SERVICE_URL: http://book-service:8080
       CART_SERVICE_URL: http://cart-service:8080
@@ -272,6 +316,8 @@ services:
       PROMOTION_SERVICE_URL: http://promotion-service:8080
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
+      order-db:
+        condition: service_healthy
       rabbitmq:
         condition: service_started
     networks:
@@ -284,10 +330,17 @@ services:
     ports:
       - "8085:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://payment-db:3306/bookstore_payment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       ORDER_SERVICE_URL: http://order-service:8080
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
+      payment-db:
+        condition: service_healthy
       rabbitmq:
         condition: service_started
     networks:
@@ -341,7 +394,7 @@ services:
     ports:
       - "8088:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       GHN_API_URL: "${GHN_API_URL:-https://dev-online-gateway.ghn.vn/shiip/public-api}"
       GHN_API_TOKEN: "${GHN_API_TOKEN:-demo-token}"
       GHN_SHOP_ID: "${GHN_SHOP_ID:-0}"
@@ -368,7 +421,7 @@ services:
     ports:
       - "8089:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mysql://news-db:3306/bookstore_news?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
@@ -390,7 +443,7 @@ services:
     ports:
       - "8090:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       BOOK_SERVICE_URL: ${BOOK_SERVICE_URL:-}
       ORDER_SERVICE_URL: ${ORDER_SERVICE_URL:-}
       USER_SERVICE_URL: ${USER_SERVICE_URL:-}
@@ -405,7 +458,7 @@ services:
     ports:
       - "8091:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_RABBITMQ_HOST: rabbitmq
       USER_SERVICE_URL: http://user-service:8080
       SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-smtp.gmail.com}"
@@ -424,7 +477,6 @@ services:
 
 networks:
   bookstore-network:
-    external: true
     name: bookstore-network
 
 volumes:
@@ -433,4 +485,6 @@ volumes:
   news_mysql_data:
   promotion_mysql_data:
   review_mysql_data:
+  order_mysql_data:
+  payment_mysql_data:
   cart_redis_data:
