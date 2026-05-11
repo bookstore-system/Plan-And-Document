@@ -57,6 +57,7 @@ services:
       start_period: 30s
     networks:
       - bookstore-network
+
   book-db:
     image: mysql:8.0
     container_name: book-db
@@ -171,6 +172,7 @@ services:
   # SERVICES
   # =========================================================================
 
+  # Chưa check
   api-gateway:
     image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.0}
     container_name: api-gateway
@@ -178,10 +180,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
     networks:
       - bookstore-network
 
+  # Đã check
   user-service:
     image: truongikpk/bookstore-user-service:${IMAGE_TAG:-v1.0.0}
     container_name: user-service
@@ -189,7 +192,7 @@ services:
     ports:
       - "8081:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/bookstore_user?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
@@ -212,6 +215,7 @@ services:
     networks:
       - bookstore-network
 
+
   book-service:
     image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.0}
     container_name: book-service
@@ -219,7 +223,7 @@ services:
     ports:
       - "8082:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mysql://book-db:3306/bookstore_book?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
