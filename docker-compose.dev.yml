@@ -216,11 +216,19 @@ services:
   api-gateway:
     image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.0}
     container_name: api-gateway
-    restart: unless-stopped
+    working_dir: /build
     ports:
       - "8080:8080"
+    volumes:
+      - .:/build
+      - ~/.m2:/root/.m2
+    # .env → biến môi trường trong container (APP_JWT_PUBLIC_KEY, SPRING_PROFILES_ACTIVE, …)
+    env_file:
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE: dev
+    # Profile dev → application-dev.yaml
+    command: mvn spring-boot:run -Dspring-boot.run.profiles=dev
     networks:
       - bookstore-network
 
@@ -245,6 +253,10 @@ services:
       APP_JWT_PUBLIC_KEY: "${APP_JWT_PUBLIC_KEY}"
       APP_JWT_EXPIRATION_MS: "${APP_JWT_EXPIRATION_MS}"
       APP_JWT_REFRESH_EXPIRATION_MS: "${APP_JWT_REFRESH_EXPIRATION_MS}"
+      CLOUDINARY_ENABLED: true
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
     depends_on:
       user-db:
         condition: service_healthy
