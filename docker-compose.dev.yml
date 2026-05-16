@@ -279,6 +279,7 @@ services:
       - "8082:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      APP_JWT_KEYS_DIR: /key
       SPRING_DATASOURCE_URL: jdbc:mysql://book-db:3306/bookstore_book?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
@@ -288,6 +289,11 @@ services:
       CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
       CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
       CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      QDRANT_URL: ${QDRANT_URL}
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+    volumes:
+      - ./key:/key:ro
     depends_on:
       book-db:
         condition: service_healthy
