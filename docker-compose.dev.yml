@@ -446,6 +446,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: bookstore
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      BOOK_SERVICE_URL: http://book-service:8080
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       promotion-db:
