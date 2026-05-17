@@ -377,7 +377,10 @@ services:
     restart: unless-stopped
     ports:
       - "8086:8080"
+    volumes:
+      - ./key:/key:ro
     environment:
+      APP_JWT_KEYS_DIR: /key
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mysql://promotion-db:3306/bookstore_promotion_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
