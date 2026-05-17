@@ -19,7 +19,6 @@
 # =============================================================================
 
 services:
-
   # =========================================================================
   # INFRASTRUCTURE
   # =========================================================================
@@ -51,7 +50,8 @@ services:
     volumes:
       - user_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -71,7 +71,8 @@ services:
     volumes:
       - book_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -91,7 +92,29 @@ services:
     volumes:
       - news_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  cart-db:
+    image: mysql:8.0
+    container_name: cart-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_cart
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - cart_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -111,7 +134,8 @@ services:
     volumes:
       - promotion_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -131,7 +155,8 @@ services:
     volumes:
       - review_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -151,7 +176,8 @@ services:
     volumes:
       - order_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -171,7 +197,8 @@ services:
     volumes:
       - payment_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -310,11 +337,18 @@ services:
       - "8083:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://cart-db:3306/bookstore_cart?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       REDIS_HOST: cart-redis
       REDIS_PORT: 6379
       BOOK_SERVICE_URL: http://book-service:8080
       USER_SERVICE_URL: http://user-service:8080
     depends_on:
+      cart-db:
+        condition: service_healthy
       cart-redis:
         condition: service_healthy
     networks:
@@ -503,6 +537,7 @@ services:
 networks:
   bookstore-network:
     name: bookstore-network
+    external: true
 
 volumes:
   user_mysql_data:
@@ -512,4 +547,5 @@ volumes:
   review_mysql_data:
   order_mysql_data:
   payment_mysql_data:
+  cart_mysql_data:
   cart_redis_data:
