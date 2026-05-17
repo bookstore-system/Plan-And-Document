@@ -206,6 +206,26 @@ services:
     networks:
       - bookstore-network
 
+  saga-db:
+    image: mysql:8.0
+    container_name: saga-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_saga
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - saga_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   user-redis:
     image: redis:7.2-alpine
     container_name: user-redis
@@ -258,6 +278,8 @@ services:
       user-service:
         condition: service_started
       book-service:
+        condition: service_started
+      saga-orchestrator-service:
         condition: service_started
     networks:
       - bookstore-network
@@ -346,11 +368,14 @@ services:
       REDIS_PORT: 6379
       BOOK_SERVICE_URL: http://book-service:8080
       USER_SERVICE_URL: http://user-service:8080
+      SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       cart-db:
         condition: service_healthy
       cart-redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - bookstore-network
 
@@ -418,9 +443,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: bookstore
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       promotion-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - bookstore-network
 
@@ -470,6 +498,10 @@ services:
       GHN_DEFAULT_WIDTH: "${GHN_DEFAULT_WIDTH:-15}"
       GHN_DEFAULT_HEIGHT: "${GHN_DEFAULT_HEIGHT:-2}"
       GHN_DEFAULT_WEIGHT: "${GHN_DEFAULT_WEIGHT:-300}"
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_started
     networks:
       - bookstore-network
 
@@ -530,6 +562,26 @@ services:
     networks:
       - bookstore-network
 
+  saga-orchestrator-service:
+    image: truongikpk/bookstore-saga-orchestrator-service:${IMAGE_TAG:-v1.0.0}
+    container_name: saga-orchestrator-service
+    restart: unless-stopped
+    ports:
+      - "8092:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://saga-db:3306/bookstore_saga?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      saga-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
 # =============================================================================
 # NETWORK & VOLUMES
 # =============================================================================
@@ -547,5 +599,6 @@ volumes:
   review_mysql_data:
   order_mysql_data:
   payment_mysql_data:
+  saga_mysql_data:
   cart_mysql_data:
   cart_redis_data:
