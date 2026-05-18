@@ -398,6 +398,10 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8080
       SHIPPING_SERVICE_URL: http://shipping-service:8080
       PROMOTION_SERVICE_URL: http://promotion-service:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       order-db:
@@ -414,14 +418,39 @@ services:
     ports:
       - "8085:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://payment-db:3306/bookstore_payment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       ORDER_SERVICE_URL: http://order-service:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
       SPRING_RABBITMQ_HOST: rabbitmq
+      VNPAY_URL: "${VNPAY_URL}"
+      VNPAY_RETURN_URL: "${VNPAY_RETURN_URL}"
+      VNPAY_TMN_CODE: "${VNPAY_TMN_CODE}"
+      VNPAY_SECRET_KEY: "${VNPAY_SECRET_KEY}"
+      VNPAY_VERSION: "${VNPAY_VERSION}"
+      VNPAY_COMMAND: "${VNPAY_COMMAND}"
+      VNPAY_ORDER_TYPE: "${VNPAY_ORDER_TYPE}"
+      ZALOPAY_APP_ID: "${ZALOPAY_APP_ID}"
+      ZALOPAY_KEY1: "${ZALOPAY_KEY1}"
+      ZALOPAY_KEY2: "${ZALOPAY_KEY2}"
+      ZALOPAY_URL: "${ZALOPAY_URL}"
+      ZALOPAY_RETURN_URL: "${ZALOPAY_RETURN_URL}"
+      ZALOPAY_REDIRECT_URL: "${ZALOPAY_REDIRECT_URL}"
+      ZALOPAY_CALLBACK_URL: "${ZALOPAY_CALLBACK_URL}"
+      MOMO_PARTNER_CODE: "${MOMO_PARTNER_CODE}"
+      MOMO_ACCESS_KEY: "${MOMO_ACCESS_KEY}"
+      MOMO_SECRET_KEY: "${MOMO_SECRET_KEY}"
+      MOMO_ENDPOINT: "${MOMO_ENDPOINT}"
+      MOMO_RETURN_URL: "${MOMO_RETURN_URL}"
+      MOMO_IPN_URL: "${MOMO_IPN_URL}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:3000}"
     depends_on:
       payment-db:
         condition: service_healthy
