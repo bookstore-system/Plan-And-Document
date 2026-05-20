@@ -164,6 +164,27 @@ services:
     networks:
       - bookstore-network
 
+  shipping-db:
+    image: mysql:8.0
+    container_name: shipping-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_shipping
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - shipping_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   order-db:
     image: mysql:8.0
     container_name: order-db
@@ -515,24 +536,40 @@ services:
       - "8088:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      BOOKSTORE_SAGA_ENABLED: "true"
+      BOOKSTORE_SAGA_COMMANDS_EXCHANGE: bookstore.commands
+      BOOKSTORE_SAGA_EVENTS_EXCHANGE: bookstore.events
+      BOOKSTORE_SAGA_COMMANDS_QUEUE: shipping.commands.queue
+      BOOKSTORE_SAGA_CREATE_RETRY_MAX: "2"
+      BOOKSTORE_SAGA_CREATE_RETRY_DELAY_MS: "1500"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_DATASOURCE_URL: jdbc:mysql://shipping-db:3306/bookstore_shipping?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       GHN_API_URL: "${GHN_API_URL:-https://dev-online-gateway.ghn.vn/shiip/public-api}"
-      GHN_API_TOKEN: "${GHN_API_TOKEN:-demo-token}"
-      GHN_SHOP_ID: "${GHN_SHOP_ID:-0}"
+      GHN_API_TOKEN: "${GHN_API_TOKEN:-4149566a-b2e0-11f0-b040-4e257d8388b4}"
+      GHN_SHOP_ID: "${GHN_SHOP_ID:-197778}"
       GHN_SHOP_NAME: "${GHN_SHOP_NAME:-Bookstore Shop}"
-      GHN_SHOP_PHONE: "${GHN_SHOP_PHONE:-}"
-      GHN_SHOP_ADDRESS: "${GHN_SHOP_ADDRESS:-}"
-      GHN_SHOP_WARD: "${GHN_SHOP_WARD:-}"
-      GHN_SHOP_DISTRICT: "${GHN_SHOP_DISTRICT:-}"
-      GHN_SHOP_PROVINCE: "${GHN_SHOP_PROVINCE:-}"
-      GHN_FROM_WARD_CODE: "${GHN_FROM_WARD_CODE:-}"
-      GHN_FROM_DISTRICT_ID: "${GHN_FROM_DISTRICT_ID:-0}"
-      GHN_FROM_PROVINCE_ID: "${GHN_FROM_PROVINCE_ID:-0}"
+      GHN_SHOP_PHONE: "${GHN_SHOP_PHONE:-0374425748}"
+      GHN_SHOP_ADDRESS: "${GHN_SHOP_ADDRESS:-123 Street Name}"
+      GHN_SHOP_WARD: "${GHN_SHOP_WARD:-Phường 1}"
+      GHN_SHOP_DISTRICT: "${GHN_SHOP_DISTRICT:-Quận Gò Vấp}"
+      GHN_SHOP_PROVINCE: "${GHN_SHOP_PROVINCE:-Hồ Chí Minh}"
+      GHN_FROM_WARD_CODE: "${GHN_FROM_WARD_CODE:-21301}"
+      GHN_FROM_DISTRICT_ID: "${GHN_FROM_DISTRICT_ID:-1461}"
+      GHN_FROM_PROVINCE_ID: "${GHN_FROM_PROVINCE_ID:-202}"
       GHN_DEFAULT_LENGTH: "${GHN_DEFAULT_LENGTH:-20}"
       GHN_DEFAULT_WIDTH: "${GHN_DEFAULT_WIDTH:-15}"
       GHN_DEFAULT_HEIGHT: "${GHN_DEFAULT_HEIGHT:-2}"
       GHN_DEFAULT_WEIGHT: "${GHN_DEFAULT_WEIGHT:-300}"
-      SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
+      shipping-db:
+        condition: service_healthy
       rabbitmq:
         condition: service_started
     networks:
@@ -622,7 +659,7 @@ services:
 networks:
   bookstore-network:
     name: bookstore-network
-    external: true
+    # external: true
 
 volumes:
   user_mysql_data:
@@ -630,6 +667,7 @@ volumes:
   news_mysql_data:
   promotion_mysql_data:
   review_mysql_data:
+  shipping_mysql_data:
   order_mysql_data:
   payment_mysql_data:
   saga_mysql_data:
