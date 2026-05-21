@@ -143,6 +143,27 @@ services:
     networks:
       - bookstore-network
 
+  notification-db:
+    image: mysql:8.0
+    container_name: notification-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_notification
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - notification_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   review-db:
     image: mysql:8.0
     container_name: review-db
@@ -556,11 +577,20 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_RABBITMQ_HOST: rabbitmq
       USER_SERVICE_URL: http://user-service:8080
+      USER_SERVICE_USERNAME: admin
+      USER_SERVICE_PASSWORD: admin
+      SPRING_DATASOURCE_URL: jdbc:mysql://notification-db:3306/bookstore_notification?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-smtp.gmail.com}"
       SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
       SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-}"
       SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
     depends_on:
+      notification-db:
+        condition: service_healthy
       rabbitmq:
         condition: service_started
     networks:
@@ -600,6 +630,7 @@ volumes:
   book_mysql_data:
   news_mysql_data:
   promotion_mysql_data:
+  notification_mysql_data:
   review_mysql_data:
   order_mysql_data:
   payment_mysql_data:
