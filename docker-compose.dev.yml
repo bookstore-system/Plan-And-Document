@@ -185,6 +185,27 @@ services:
     networks:
       - bookstore-network
 
+  notification-db:
+    image: mysql:8.0
+    container_name: notification-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_notification
+      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME:-bookstore}
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-bookstore}
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - notification_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   order-db:
     image: mysql:8.0
     container_name: order-db
@@ -613,20 +634,28 @@ services:
       - bookstore-network
 
   notification-service:
-    image: truongikpk/bookstore-notification-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-notification-service:${IMAGE_TAG:-v1.0.1}
     container_name: notification-service
     restart: unless-stopped
     ports:
       - "8091:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_HOST: notification-db
+      SPRING_DATASOURCE_PORT: 3306
+      SPRING_DATASOURCE_DATABASE: bookstore_notification
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-bookstore}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-bookstore}
       SPRING_RABBITMQ_HOST: rabbitmq
       USER_SERVICE_URL: http://user-service:8080
-      SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-smtp.gmail.com}"
-      SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
-      SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-}"
-      SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      NOTIFICATION_MAIL_FROM: ${NOTIFICATION_MAIL_FROM:-}
     depends_on:
+      notification-db:
+        condition: service_healthy
       rabbitmq:
         condition: service_started
     networks:
@@ -672,4 +701,5 @@ volumes:
   payment_mysql_data:
   saga_mysql_data:
   cart_mysql_data:
+  notification_mysql_data:
   cart_redis_data:
