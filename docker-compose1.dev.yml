@@ -1,0 +1,695 @@
+# =============================================================================
+#  docker-compose.dev.yml — Pull image đã build sẵn từ Docker Hub
+# =============================================================================
+#  Cách dùng:
+#    cd Plan-And-Document
+#    docker compose -f docker-compose.dev.yml pull
+#    docker compose -f docker-compose.dev.yml up -d
+#
+#  Tắt:
+#    docker compose -f docker-compose.dev.yml down
+#
+#  Xem log 1 service:
+#    docker compose -f docker-compose.dev.yml logs -f user-service
+#
+#  File này tự động đọc biến từ Plan-And-Document/.env.
+#  JWT: đặt private.pem + public.pem trong Plan-And-Document/key/ (xem key/README.md).
+#  Override tag image bằng biến IMAGE_TAG (mặc định v1.0.1):
+#    IMAGE_TAG=v1.1.0 docker compose -f docker-compose.dev.yml up -d
+# =============================================================================
+
+services:
+  # =========================================================================
+  # INFRASTRUCTURE
+  # =========================================================================
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bookstore-network
+
+  user-db:
+    image: mysql:8.0
+    container_name: user-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_user
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - user_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  book-db:
+    image: mysql:8.0
+    container_name: book-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_book
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - book_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  news-db:
+    image: mysql:8.0
+    container_name: news-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_news
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - news_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  cart-db:
+    image: mysql:8.0
+    container_name: cart-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_cart
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - cart_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  promotion-db:
+    image: mysql:8.0
+    container_name: promotion-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_promotion_db
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - promotion_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  review-db:
+    image: mysql:8.0
+    container_name: review-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_review_db
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - review_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  shipping-db:
+    image: mysql:8.0
+    container_name: shipping-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_shipping
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - shipping_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  order-db:
+    image: mysql:8.0
+    container_name: order-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_order
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - order_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  payment-db:
+    image: mysql:8.0
+    container_name: payment-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_payment
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - payment_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  saga-db:
+    image: mysql:8.0
+    container_name: saga-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_saga
+      MYSQL_USER: bookstore
+      MYSQL_PASSWORD: bookstore
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - saga_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
+  user-redis:
+    image: redis:7.2-alpine
+    container_name: user-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bookstore-network
+
+  cart-redis:
+    image: redis:7.2-alpine
+    container_name: cart-redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    volumes:
+      - cart_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bookstore-network
+
+  # =========================================================================
+  # SERVICES
+  # =========================================================================
+
+  api-gateway:
+    image: truongikpk/bookstore-api-gateway:
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./key:/key:ro
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      APP_JWT_KEYS_DIR: /key
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:3000}"
+    depends_on:
+      user-service:
+        condition: service_started
+      book-service:
+        condition: service_started
+      saga-orchestrator-service:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  # Đã check
+  user-service:
+    image: truongikpk/bookstore-user-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-user-service
+    container_name: user-service
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/bookstore_user?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_DATA_REDIS_HOST: user-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      APP_JWT_KEYS_DIR: /key
+      APP_JWT_EXPIRATION_MS: "${APP_JWT_EXPIRATION_MS}"
+      APP_JWT_REFRESH_EXPIRATION_MS: "${APP_JWT_REFRESH_EXPIRATION_MS}"
+      CLOUDINARY_ENABLED: true
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+    volumes:
+      - ./key:/key:ro
+    depends_on:
+      user-db:
+        condition: service_healthy
+      user-redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  book-service:
+    image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.1}
+    container_name: book-service
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      APP_JWT_KEYS_DIR: /key
+      SPRING_DATASOURCE_URL: jdbc:mysql://book-db:3306/bookstore_book?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_RABBITMQ_HOST: rabbitmq
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      QDRANT_URL: ${QDRANT_URL}
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+    volumes:
+      - ./key:/key:ro
+    depends_on:
+      book-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  cart-service:
+    image: truongikpk/bookstore-cart-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-cart-service
+    container_name: cart-service
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://cart-db:3306/bookstore_cart?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      REDIS_HOST: cart-redis
+      REDIS_PORT: 6379
+      BOOK_SERVICE_URL: http://book-service:8080
+      USER_SERVICE_URL: http://user-service:8080
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      cart-db:
+        condition: service_healthy
+      cart-redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  order-service:
+    image: truongikpk/bookstore-order-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-order-service
+    container_name: order-service
+    restart: unless-stopped
+    ports:
+      - "8084:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://order-db:3306/bookstore_order?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      USER_SERVICE_URL: http://user-service:8080
+      BOOK_SERVICE_URL: http://book-service:8080
+      CART_SERVICE_URL: http://cart-service:8080
+      PAYMENT_SERVICE_URL: http://payment-service:8080
+      SHIPPING_SERVICE_URL: http://shipping-service:8080
+      PROMOTION_SERVICE_URL: http://promotion-service:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      order-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  payment-service:
+    image: truongikpk/bookstore-payment-service:${IMAGE_TAG:-v1.0.1}
+    container_name: payment-service
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://payment-db:3306/bookstore_payment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      ORDER_SERVICE_URL: http://order-service:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      VNPAY_URL: "${VNPAY_URL}"
+      VNPAY_RETURN_URL: "${VNPAY_RETURN_URL}"
+      VNPAY_TMN_CODE: "${VNPAY_TMN_CODE}"
+      VNPAY_SECRET_KEY: "${VNPAY_SECRET_KEY}"
+      VNPAY_VERSION: "${VNPAY_VERSION}"
+      VNPAY_COMMAND: "${VNPAY_COMMAND}"
+      VNPAY_ORDER_TYPE: "${VNPAY_ORDER_TYPE}"
+      ZALOPAY_APP_ID: "${ZALOPAY_APP_ID}"
+      ZALOPAY_KEY1: "${ZALOPAY_KEY1}"
+      ZALOPAY_KEY2: "${ZALOPAY_KEY2}"
+      ZALOPAY_URL: "${ZALOPAY_URL}"
+      ZALOPAY_RETURN_URL: "${ZALOPAY_RETURN_URL}"
+      ZALOPAY_REDIRECT_URL: "${ZALOPAY_REDIRECT_URL}"
+      ZALOPAY_CALLBACK_URL: "${ZALOPAY_CALLBACK_URL}"
+      MOMO_PARTNER_CODE: "${MOMO_PARTNER_CODE}"
+      MOMO_ACCESS_KEY: "${MOMO_ACCESS_KEY}"
+      MOMO_SECRET_KEY: "${MOMO_SECRET_KEY}"
+      MOMO_ENDPOINT: "${MOMO_ENDPOINT}"
+      MOMO_RETURN_URL: "${MOMO_RETURN_URL}"
+      MOMO_IPN_URL: "${MOMO_IPN_URL}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:3000}"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  promotion-service:
+    image: truongikpk/bookstore-promotion-service:${IMAGE_TAG:-v1.0.1}
+    container_name: promotion-service
+    restart: unless-stopped
+    ports:
+      - "8086:8080"
+    volumes:
+      - ./key:/key:ro
+    environment:
+      APP_JWT_KEYS_DIR: /key
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://promotion-db:3306/bookstore_promotion_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      BOOK_SERVICE_URL: http://book-service:8080
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      promotion-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  review-service:
+    image: truongikpk/bookstore-review-service:${IMAGE_TAG:-v1.0.1}
+    container_name: review-service
+    restart: unless-stopped
+    ports:
+      - "8087:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://review-db:3306/bookstore_review_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_MVC_PATHMATCH_MATCHING_STRATEGY: ant_path_matcher
+      USER_SERVICE_URL: http://user-service:8080
+      BOOK_SERVICE_URL: http://book-service:8080
+    depends_on:
+      review-db:
+        condition: service_healthy
+    networks:
+      - bookstore-network
+
+  shipping-service:
+    image: truongikpk/bookstore-shipping-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-shipping-service
+    container_name: shipping-service
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      BOOKSTORE_SAGA_ENABLED: "true"
+      BOOKSTORE_SAGA_COMMANDS_EXCHANGE: bookstore.commands
+      BOOKSTORE_SAGA_EVENTS_EXCHANGE: bookstore.events
+      BOOKSTORE_SAGA_COMMANDS_QUEUE: shipping.commands.queue
+      BOOKSTORE_SAGA_CREATE_RETRY_MAX: "2"
+      BOOKSTORE_SAGA_CREATE_RETRY_DELAY_MS: "1500"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_DATASOURCE_URL: jdbc:mysql://shipping-db:3306/bookstore_shipping?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      GHN_API_URL: "${GHN_API_URL:-https://dev-online-gateway.ghn.vn/shiip/public-api}"
+      GHN_API_TOKEN: "${GHN_API_TOKEN:-4149566a-b2e0-11f0-b040-4e257d8388b4}"
+      GHN_CREATE_FALLBACK_ENABLED: "${GHN_CREATE_FALLBACK_ENABLED:-true}"
+      GHN_SHOP_ID: "${GHN_SHOP_ID:-197778}"
+      GHN_SHOP_NAME: "${GHN_SHOP_NAME:-Bookstore Shop}"
+      GHN_SHOP_PHONE: "${GHN_SHOP_PHONE:-0374425748}"
+      GHN_SHOP_ADDRESS: "${GHN_SHOP_ADDRESS:-123 Street Name}"
+      GHN_SHOP_WARD: "${GHN_SHOP_WARD:-Phường 1}"
+      GHN_SHOP_DISTRICT: "${GHN_SHOP_DISTRICT:-Quận Gò Vấp}"
+      GHN_SHOP_PROVINCE: "${GHN_SHOP_PROVINCE:-Hồ Chí Minh}"
+      GHN_FROM_WARD_CODE: "${GHN_FROM_WARD_CODE:-21301}"
+      GHN_FROM_DISTRICT_ID: "${GHN_FROM_DISTRICT_ID:-1461}"
+      GHN_FROM_PROVINCE_ID: "${GHN_FROM_PROVINCE_ID:-202}"
+      GHN_DEFAULT_LENGTH: "${GHN_DEFAULT_LENGTH:-20}"
+      GHN_DEFAULT_WIDTH: "${GHN_DEFAULT_WIDTH:-15}"
+      GHN_DEFAULT_HEIGHT: "${GHN_DEFAULT_HEIGHT:-2}"
+      GHN_DEFAULT_WEIGHT: "${GHN_DEFAULT_WEIGHT:-300}"
+    depends_on:
+      shipping-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  news-service:
+    image: truongikpk/bookstore-news-service:${IMAGE_TAG:-v1.0.1}
+    container_name: news-service
+    restart: unless-stopped
+    ports:
+      - "8089:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://news-db:3306/bookstore_news?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME:-}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY:-}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET:-}"
+    depends_on:
+      news-db:
+        condition: service_healthy
+    networks:
+      - bookstore-network
+
+  ai-service:
+    image: truongikpk/bookstore-ai-service:${IMAGE_TAG:-v1.0.1}
+    container_name: ai-service
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      BOOK_SERVICE_URL: http://book-service:8080
+      ORDER_SERVICE_URL: http://order-service:8080
+      USER_SERVICE_URL: http://user-service:8080
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+    networks:
+      - bookstore-network
+
+  notification-service:
+    image: truongikpk/bookstore-notification-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-notification-service
+    container_name: notification-service
+    restart: unless-stopped
+    ports:
+      - "8091:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_RABBITMQ_HOST: rabbitmq
+      USER_SERVICE_URL: "${USER_SERVICE_URL:-http://user-service:8080}"
+      SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-smtp.gmail.com}"
+      SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
+      SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-}"
+      SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
+      NOTIFICATION_MAIL_FROM: "${NOTIFICATION_MAIL_FROM:-${SPRING_MAIL_USERNAME:-no-reply@notfound.local}}"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+  saga-orchestrator-service:
+    image: truongikpk/bookstore-saga-orchestrator-service:${IMAGE_TAG:-v1.0.1}
+    build:
+      context: ../bookstore-saga-orchestrator-service
+    container_name: saga-orchestrator-service
+    restart: unless-stopped
+    ports:
+      - "8092:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://saga-db:3306/bookstore_saga?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bookstore
+      SPRING_DATASOURCE_PASSWORD: bookstore
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      saga-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - bookstore-network
+
+# =============================================================================
+# NETWORK & VOLUMES
+# =============================================================================
+
+networks:
+  bookstore-network:
+    name: bookstore-network
+    # external: true
+
+volumes:
+  user_mysql_data:
+  book_mysql_data:
+  news_mysql_data:
+  promotion_mysql_data:
+  review_mysql_data:
+  shipping_mysql_data:
+  order_mysql_data:
+  payment_mysql_data:
+  saga_mysql_data:
+  cart_mysql_data:
+  cart_redis_data:
