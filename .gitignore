@@ -35,4 +35,4 @@ build/
 # Ignore secret files
 k8s/secret.yaml
 .env
-docker-compose1.dev.yml
+# docker-compose1.dev.yml

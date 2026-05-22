@@ -14,7 +14,7 @@
 #
 #  File này tự động đọc biến từ Plan-And-Document/.env.
 #  JWT: đặt private.pem + public.pem trong Plan-And-Document/key/ (xem key/README.md).
-#  Override tag image bằng biến IMAGE_TAG (mặc định v1.0.0):
+#  Override tag image bằng biến IMAGE_TAG (mặc định v1.0.1):
 #    IMAGE_TAG=v1.1.0 docker compose -f docker-compose.dev.yml up -d
 # =============================================================================
 
@@ -185,27 +185,6 @@ services:
     networks:
       - bookstore-network
 
-  notification-db:
-    image: mysql:8.0
-    container_name: notification-db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: bookstore_notification
-      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME:-bookstore}
-      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-bookstore}
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - notification_mysql_data:/var/lib/mysql
-    healthcheck:
-      test:
-        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
-    networks:
-      - bookstore-network
-
   order-db:
     image: mysql:8.0
     container_name: order-db
@@ -268,6 +247,26 @@ services:
     networks:
       - bookstore-network
 
+  notification-db:
+    image: mysql:8.0
+    container_name: notification-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_notification
+      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME:-bookstore}
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-bookstore}
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - notification_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - bookstore-network
+
   user-redis:
     image: redis:7.2-alpine
     container_name: user-redis
@@ -303,7 +302,7 @@ services:
   # =========================================================================
 
   api-gateway:
-    image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.1}
     container_name: api-gateway
     restart: unless-stopped
     ports:
@@ -328,7 +327,7 @@ services:
 
   # Đã check
   user-service:
-    image: truongikpk/bookstore-user-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-user-service:${IMAGE_TAG:-v1.0.1}
     container_name: user-service
     restart: unless-stopped
     ports:
@@ -363,7 +362,7 @@ services:
       - bookstore-network
 
   book-service:
-    image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.1}
     container_name: book-service
     restart: unless-stopped
     ports:
@@ -394,7 +393,7 @@ services:
       - bookstore-network
 
   cart-service:
-    image: truongikpk/bookstore-cart-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-cart-service:${IMAGE_TAG:-v1.0.1}
     container_name: cart-service
     restart: unless-stopped
     ports:
@@ -422,13 +421,14 @@ services:
       - bookstore-network
 
   order-service:
-    image: truongikpk/bookstore-order-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-order-service:${IMAGE_TAG:-v1.0.1}
     container_name: order-service
     restart: unless-stopped
     ports:
       - "8084:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:mysql://order-db:3306/bookstore_order?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
@@ -454,7 +454,7 @@ services:
       - bookstore-network
 
   payment-service:
-    image: truongikpk/bookstore-payment-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-payment-service:${IMAGE_TAG:-v1.0.1}
     container_name: payment-service
     restart: unless-stopped
     ports:
@@ -502,7 +502,7 @@ services:
       - bookstore-network
 
   promotion-service:
-    image: truongikpk/bookstore-promotion-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-promotion-service:${IMAGE_TAG:-v1.0.1}
     container_name: promotion-service
     restart: unless-stopped
     ports:
@@ -528,7 +528,7 @@ services:
       - bookstore-network
 
   review-service:
-    image: truongikpk/bookstore-review-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-review-service:${IMAGE_TAG:-v1.0.1}
     container_name: review-service
     restart: unless-stopped
     ports:
@@ -550,7 +550,7 @@ services:
       - bookstore-network
 
   shipping-service:
-    image: truongikpk/bookstore-shipping-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-shipping-service:${IMAGE_TAG:-v1.0.1}
     container_name: shipping-service
     restart: unless-stopped
     ports:
@@ -574,6 +574,7 @@ services:
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       GHN_API_URL: "${GHN_API_URL:-https://dev-online-gateway.ghn.vn/shiip/public-api}"
       GHN_API_TOKEN: "${GHN_API_TOKEN:-4149566a-b2e0-11f0-b040-4e257d8388b4}"
+      GHN_CREATE_FALLBACK_ENABLED: "${GHN_CREATE_FALLBACK_ENABLED:-true}"
       GHN_SHOP_ID: "${GHN_SHOP_ID:-197778}"
       GHN_SHOP_NAME: "${GHN_SHOP_NAME:-Bookstore Shop}"
       GHN_SHOP_PHONE: "${GHN_SHOP_PHONE:-0374425748}"
@@ -597,7 +598,7 @@ services:
       - bookstore-network
 
   news-service:
-    image: truongikpk/bookstore-news-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-news-service:${IMAGE_TAG:-v1.0.1}
     container_name: news-service
     restart: unless-stopped
     ports:
@@ -619,7 +620,7 @@ services:
       - bookstore-network
 
   ai-service:
-    image: truongikpk/bookstore-ai-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-ai-service:${IMAGE_TAG:-v1.0.1}
     container_name: ai-service
     restart: unless-stopped
     ports:
@@ -648,11 +649,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-bookstore}
       SPRING_RABBITMQ_HOST: rabbitmq
       USER_SERVICE_URL: http://user-service:8080
-      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
-      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
-      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
-      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
-      NOTIFICATION_MAIL_FROM: ${NOTIFICATION_MAIL_FROM:-}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      NOTIFICATION_MAIL_FROM: ${NOTIFICATION_MAIL_FROM}
     depends_on:
       notification-db:
         condition: service_healthy
@@ -662,16 +663,21 @@ services:
       - bookstore-network
 
   saga-orchestrator-service:
-    image: truongikpk/bookstore-saga-orchestrator-service:${IMAGE_TAG:-v1.0.0}
+    image: truongikpk/bookstore-saga-orchestrator-service:${IMAGE_TAG:-v1.0.1}
     container_name: saga-orchestrator-service
     restart: unless-stopped
     ports:
       - "8092:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:mysql://saga-db:3306/bookstore_saga?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: bookstore
       SPRING_DATASOURCE_PASSWORD: bookstore
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: "${RABBITMQ_USERNAME:-guest}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       saga-db:
