@@ -282,7 +282,7 @@ services:
   # =========================================================================
 
   api-gateway:
-    image: truongikpk/bookstore-api-gateway:
+    image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.1}
     container_name: api-gateway
     restart: unless-stopped
     ports:
