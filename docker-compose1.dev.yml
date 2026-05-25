@@ -624,7 +624,7 @@ services:
       - bookstore-network
 
   ai-service:
-    image: truongikpk/bookstore-ai-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-ai-service:v1.0.2
     container_name: ai-service
     restart: unless-stopped
     ports:
@@ -633,8 +633,16 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       BOOK_SERVICE_URL: http://book-service:8080
       ORDER_SERVICE_URL: http://order-service:8080
+      PROMOTION_SERVICE_URL: http://promotion-service:8080
+      REVIEW_SERVICE_URL: http://review-service:8080
       USER_SERVICE_URL: http://user-service:8080
+      CART_SERVICE_URL: http://cart-service:8080
+      AI_PROVIDER: "${AI_PROVIDER:-groq}"
+      SPRING_AI_MODEL_CHAT: "${SPRING_AI_MODEL_CHAT:-none}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      AI_API_KEY: "${AI_API_KEY:-${GROQ_API_KEY:-}}"
+      AI_MODEL: "${AI_MODEL:-deepseek-v4-flash}"
+      AI_BASE_URL: "${AI_BASE_URL:-https://ds2api-yr0a.onrender.com}"
     networks:
       - bookstore-network
 
