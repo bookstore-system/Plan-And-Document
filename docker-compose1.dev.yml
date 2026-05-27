@@ -698,7 +698,7 @@ services:
 networks:
   bookstore-network:
     name: bookstore-network
-    # external: true
+    external: true
 
 volumes:
   user_mysql_data:
