@@ -315,7 +315,12 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       APP_JWT_KEYS_DIR: /key
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:3000}"
+      SPRING_DATA_REDIS_HOST: user-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_SSL_ENABLED: "false"
     depends_on:
+      user-redis:
+        condition: service_healthy
       user-service:
         condition: service_started
       book-service:
@@ -349,6 +354,11 @@ services:
       CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
       CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
       CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
+      GOOGLE_REDIRECT_URI: "${GOOGLE_REDIRECT_URI:-http://localhost:8080/api/v1/auth/google/callback}"
+      GOOGLE_FRONTEND_REDIRECT_URL: "${GOOGLE_FRONTEND_REDIRECT_URL:-http://localhost:3000}"
+      APP_EMAIL_VERIFICATION_BASE_URL: "${APP_EMAIL_VERIFICATION_BASE_URL:-http://localhost:8080}"
     volumes:
       - ./key:/key:ro
     depends_on:
@@ -624,7 +634,7 @@ services:
       - bookstore-network
 
   ai-service:
-    image: truongikpk/bookstore-ai-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-ai-service:v1.0.2
     container_name: ai-service
     restart: unless-stopped
     ports:
@@ -633,8 +643,19 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       BOOK_SERVICE_URL: http://book-service:8080
       ORDER_SERVICE_URL: http://order-service:8080
+      PROMOTION_SERVICE_URL: http://promotion-service:8080
+      REVIEW_SERVICE_URL: http://review-service:8080
       USER_SERVICE_URL: http://user-service:8080
+      CART_SERVICE_URL: http://cart-service:8080
+      AI_PROVIDER: "${AI_PROVIDER:-groq}"
+      SPRING_AI_MODEL_CHAT: "${SPRING_AI_MODEL_CHAT:-none}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      AI_API_KEY: "${AI_API_KEY:-${GROQ_API_KEY:-}}"
+      AI_MODEL: "${AI_MODEL:-deepseek-v4-flash}"
+      AI_BASE_URL: "${AI_BASE_URL:-https://ds2api-yr0a.onrender.com}"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://ds2api-yr0a.onrender.com}
     networks:
       - bookstore-network
 
@@ -657,6 +678,10 @@ services:
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
       SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST: "smtp.gmail.com"
       NOTIFICATION_MAIL_FROM: ${NOTIFICATION_MAIL_FROM}
     depends_on:
       notification-db:
