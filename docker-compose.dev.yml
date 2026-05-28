@@ -350,6 +350,7 @@ services:
       CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
       CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
       CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+      APP_EMAIL_VERIFICATION_BASE_URL: "${APP_EMAIL_VERIFICATION_BASE_URL:-http://localhost:8080}"
     volumes:
       - ./key:/key:ro
     depends_on:
