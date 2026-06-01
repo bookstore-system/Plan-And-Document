@@ -302,7 +302,7 @@ services:
   # =========================================================================
 
   api-gateway:
-    image: truongikpk/bookstore-api-gateway:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-api-gateway:v1.0.2
     container_name: api-gateway
     restart: unless-stopped
     ports:
@@ -332,7 +332,7 @@ services:
 
   # Đã check
   user-service:
-    image: truongikpk/bookstore-user-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-user-service:v1.0.2
     container_name: user-service
     restart: unless-stopped
     ports:
@@ -372,7 +372,7 @@ services:
       - bookstore-network
 
   book-service:
-    image: truongikpk/bookstore-book-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-book-service:v1.0.2
     container_name: book-service
     restart: unless-stopped
     ports:
@@ -392,6 +392,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       QDRANT_URL: ${QDRANT_URL}
       QDRANT_API_KEY: ${QDRANT_API_KEY}
+      REVIEW_SERVICE_URL: http://review-service:8080
+      ORDER_SERVICE_URL: http://order-service:8080
     volumes:
       - ./key:/key:ro
     depends_on:
@@ -403,7 +405,7 @@ services:
       - bookstore-network
 
   cart-service:
-    image: truongikpk/bookstore-cart-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-cart-service:v1.0.2
     container_name: cart-service
     restart: unless-stopped
     ports:
@@ -431,7 +433,7 @@ services:
       - bookstore-network
 
   order-service:
-    image: truongikpk/bookstore-order-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-order-service:v1.0.2
     container_name: order-service
     restart: unless-stopped
     ports:
@@ -538,7 +540,7 @@ services:
       - bookstore-network
 
   review-service:
-    image: truongikpk/bookstore-review-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-review-service:v1.0.2
     container_name: review-service
     restart: unless-stopped
     ports:
@@ -564,7 +566,7 @@ services:
       - bookstore-network
 
   shipping-service:
-    image: truongikpk/bookstore-shipping-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-shipping-service:v1.0.2
     container_name: shipping-service
     restart: unless-stopped
     ports:
@@ -648,8 +650,11 @@ services:
       USER_SERVICE_URL: http://user-service:8080
       CART_SERVICE_URL: http://cart-service:8080
       AI_PROVIDER: "${AI_PROVIDER:-groq}"
-      SPRING_AI_MODEL_CHAT: "${SPRING_AI_MODEL_CHAT:-none}"
+      SPRING_AI_MODEL_CHAT: "${SPRING_AI_MODEL_CHAT:-google-genai}"
+      SPRING_AI_GOOGLE_GENAI_API_KEY: "${GEMINI_API_KEY:-${AI_API_KEY:-}}"
+      SPRING_AI_GOOGLE_GENAI_CHAT_OPTIONS_MODEL: "${GEMINI_MODEL:-gemini-2.5-flash}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_MODEL: "${GEMINI_MODEL:-gemini-2.5-flash}"
       AI_API_KEY: "${AI_API_KEY:-${GROQ_API_KEY:-}}"
       AI_MODEL: "${AI_MODEL:-deepseek-v4-flash}"
       AI_BASE_URL: "${AI_BASE_URL:-https://ds2api-yr0a.onrender.com}"
@@ -660,7 +665,7 @@ services:
       - bookstore-network
 
   notification-service:
-    image: truongikpk/bookstore-notification-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-notification-service:v1.0.2
     container_name: notification-service
     restart: unless-stopped
     ports:
@@ -692,7 +697,7 @@ services:
       - bookstore-network
 
   saga-orchestrator-service:
-    image: truongikpk/bookstore-saga-orchestrator-service:${IMAGE_TAG:-v1.0.1}
+    image: truongikpk/bookstore-saga-orchestrator-service:v1.0.2
     container_name: saga-orchestrator-service
     restart: unless-stopped
     ports:
